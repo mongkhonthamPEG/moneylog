@@ -1,6 +1,6 @@
 # Moneylog
 
-Personal pay-cycle budget tracker. Mobile-first offline PWA, Bangkok, THB. See `SPEC.md` for the full feature spec.
+Pay-cycle budget tracker. Mobile-first offline PWA, default locale Thailand (THB, Asia/Bangkok). See `SPEC.md` for the full feature spec.
 
 ## Glossary
 
@@ -8,16 +8,16 @@ Personal pay-cycle budget tracker. Mobile-first offline PWA, Bangkok, THB. See `
 Budgeting period from a payday through the day before the next payday. Not a calendar month. Cycles never overlap or leave gaps: starting a new cycle sets the previous cycle's end date to the day before the new payday. The open cycle has no end date; "days left" uses the *expected payday* (default: last working day of the month, Thai holidays excluded; editable per cycle).
 
 **Account**
-Anything that holds a balance: bank, savings, pot, credit_card. Balance is always computed from the journal, never stored or edited directly.
+Anything that holds a balance: bank, savings, pot, credit_card. User-defined, any number; one is flagged the **main spending account**. Balance is always computed from the journal, never stored or edited directly.
 
 **Pot**
-A real envelope in a banking app, separate from the Main Bank balance. Each pot is its own account. Funding a pot is a transfer from Main Bank.
+A real envelope in a banking app, separate from the main spending account's balance. Each pot is its own account. Funding a pot is a transfer from the main account.
 
 **Credit card**
 A liability account. Balance goes negative as you spend; paying it is a transfer from a bank or pot.
 
-**Rabbit card**
-Not an account. Money topped up cannot leave it. A top-up is a spending entry from the Pot – BTS (category `transport`, not counted toward the daily cap). Its balance is a number typed into the BTS calculator.
+**Travel card**
+Not an account (money topped up cannot leave it). A top-up is a spending entry from a chosen account, category `transport`, not counted toward the daily cap. Its balance is a number typed into the travel top-up calculator.
 
 **Journal**
 Append-only list of entries; the source of truth. Amounts are integer satang (THB × 100), displayed as `1,000.99`. A transfer is two equal and opposite entries and never counts as spending. Editing is allowed; deleting marks an entry *voided* (kept, hidden in the UI).
@@ -32,19 +32,19 @@ Per-day spending limit (default 400 THB, editable per cycle). Only entries flagg
 For entries 00:00–04:59, a toggle (default OFF) moves the entry to the previous day for cap purposes only.
 
 **Scheduled item**
-A fixed cost (rent, mobile, subscriptions) created by the New-cycle wizard with an expected date and an adjustable amount. Tapping "paid" posts it to the journal. Subscriptions post from the Pot – Subscriptions. Feeds "upcoming in 7 days" and the buffer math.
+A fixed cost created from a template by the New-cycle wizard, with an expected date and an adjustable amount. Tapping "paid" posts it to the journal, from the template's paying account. Feeds "upcoming in 7 days" and the buffer math.
 
 **Safe to spend (per day)**
-(Main Bank − unpaid Main Bank-paid scheduled items this cycle) ÷ days left.
+(main account − unpaid scheduled items paid from it this cycle) ÷ days left.
 
 **Buffer**
-Main Bank − unpaid Main Bank-paid scheduled items − (daily cap × days left).
+main account − unpaid scheduled items − (daily cap × days left).
 
-**Base net salary**
-Editable setting, default 30,000. Salary entered above it prompts moving the OT excess to Reserve Bank.
+**Base salary**
+Optional setting. Salary entered above it prompts moving the excess to a chosen account.
 
 **Goal**
-Target amount linked to a pot. Contribution is per pay cycle (not month); defaults to the average moved into the pot over recent cycles; overridable. Estimate is in cycles-to-goal.
+Target (amount or months of expenses) linked to an account. Contribution is per pay cycle (not month); defaults to the average moved into the pot over recent cycles; overridable. Estimate is in cycles-to-goal.
 
 ## Conventions
 
