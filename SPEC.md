@@ -3,17 +3,27 @@
 Pay-cycle budget tracker (mobile-first web app). Everything personal (accounts, salary, fixed costs, goals, commute) is user configuration, not hardcoded.
 
 ## Context
-Built for people paid monthly on a varying payday, so budgeting runs on PAY CYCLES (payday → day before next payday), NOT calendar months. Default locale: Thailand (THB, Asia/Bangkok, Thai public holidays). The previous app (Moneypod) failed because it was calendar-month based and had a wallet limit.
+Built for people paid monthly on a varying payday, so budgeting runs on PAY CYCLES (payday → day before next payday), NOT calendar months. Calendar-month budgeting and per-wallet limits don't fit this.
 
-## Tech
-- Single-page PWA (Vite + TypeScript + Preact), works offline on iPhone, installable to home screen
-- Data in IndexedDB; JSON export/import for backup
+## Platform
+- Single-page PWA: works offline on iPhone, installable to home screen
+- Data stays on the device; JSON export/import for backup
 - No backend, no login
+- Stack and storage decisions live in `docs/adr/`
+
+## Settings (all user-editable)
+- Currency (default THB) and time zone (default Asia/Bangkok)
+- Public-holiday set (default Thailand, bundled offline; user can add days off)
+- Daily cap: on/off and amount (see Pay cycle)
+- Late-night window (default 00:00–04:59)
+- Backup warning threshold (default 7 days)
+- Base salary (optional)
 
 ## Accounts (no limit; add/rename/archive)
 - Fields: name, type, opening balance, archived flag
 - Types: bank, savings, pot (envelope), credit_card
 - Exactly one account is flagged **main spending account**. Daily-cap math, safe-to-spend and buffer use it.
+- The main account can't be archived: the app asks you to pick a new main account first.
 - First run: setup screen where the user adds any number of accounts with opening balances and picks the main one. An account list can also be loaded from a JSON seed file via import.
 - Balances are always computed from the journal (opening balance + entries), never edited directly.
 
@@ -21,8 +31,8 @@ Built for people paid monthly on a varying payday, so budgeting runs on PAY CYCL
 - User taps "New cycle" when salary lands: enters salary amount + date
 - Optional **base salary** setting: when set, any salary above it prompts "move the excess to <account>?" (e.g. overtime to a reserve account)
 - Cycle setup wizard: scheduled fixed costs, pot allocations, savings transfers, daily cap
-- Default daily cap: 400 (editable per cycle)
-- Expected next payday defaults to the last working day of the month (public holidays excluded), editable per cycle; used for "days left"
+- **Daily cap is a choice**, set per cycle: on or off, and an adjustable amount when on (suggested default 400). When off, the cap widgets, the "counts toward daily cap" flag, the late-night toggle and Buffer are hidden; safe-to-spend still works.
+- Expected next payday defaults to the last working day of the month (weekends and the selected holiday set excluded), editable per cycle; used for "days left"
 
 ## Fixed costs (recurring templates, editable)
 - Template: name, amount, day of month, paying account, optional category
@@ -37,22 +47,21 @@ Built for people paid monthly on a varying payday, so budgeting runs on PAY CYCL
 - Transfer type: account → account (doesn't count as spending)
 - Credit card spending increases balance owed; paying the card is a transfer from a bank/pot
 - Edit anytime; delete marks the entry voided (kept, hidden)
-- Dates/times stored as local strings (no UTC conversion), app fixed to the configured time zone
-- Amounts are integer minor units (satang), displayed with 2 decimals, e.g. 1,000.99
+- Dates/times stored as local strings (no UTC conversion) in the configured time zone
+- Amounts are integer minor units, displayed with 2 decimals, e.g. 1,000.99
 
 ## Quick add (most important UX)
 - Big "+" button → amount keypad → category chips → save. Under 5 seconds.
 - Default account: the main spending account, default date: now
-- Late-night entries (00:00–04:59) get a toggle, default OFF: "count for previous day"
+- Late-night entries (inside the late-night window) get a toggle, default OFF: "count for previous day"
 
 ## Dashboard
-- Today: spent vs daily cap (green/red)
-- Cycle: total daily spending vs (cap × days elapsed), running over/under
+- If the daily cap is on: today's spend vs cap (green/red), and cycle daily spending vs (cap × days elapsed), running over/under
 - Safe to spend per day = (main account − unpaid scheduled items paid from it this cycle) ÷ days left
-- Buffer = main account − unpaid scheduled items − (cap × days left)
+- Buffer (only if the daily cap is on) = main account − unpaid scheduled items − (cap × days left)
 - All account balances; savings total; progress for each goal
 - Upcoming scheduled items in the next 7 days
-- Warning when the last backup is older than 7 days
+- Warning when the last backup is older than the backup threshold
 
 ## Reconciliation
 - "Reconcile" button per account: enter real balance → app shows gap vs computed balance → option to log the gap as an "unlogged / other" entry so they match
@@ -69,7 +78,7 @@ Built for people paid monthly on a varying payday, so budgeting runs on PAY CYCL
 - Compare last 3 cycles
 
 ## Backup
-- Versioned JSON export (`schemaVersion`) via the share sheet; prompt after each New cycle; warn after 7 days without a backup
+- Versioned JSON export (`schemaVersion`) via the share sheet; prompt after each New cycle; warn when older than the backup threshold
 - Import validates, then replaces all data after confirmation
 
 ## Acceptance criteria
@@ -81,7 +90,7 @@ Built for people paid monthly on a varying payday, so budgeting runs on PAY CYCL
 6. Late-night toggle moves the transaction to the previous day for cap purposes only
 7. Export → clear data → import restores everything exactly
 8. Works on iPhone Safari at 375px width, offline after first load
-9. A user can create any number of accounts, archive them, and change the main spending account; dashboard math follows the flag
+9. A user can create any number of accounts, archive them, and change the main spending account; dashboard math follows the flag; archiving the main account is blocked until another is picked
 
 ## Testing
 Unit tests for: cycle boundaries, travel calculation (incl. holiday + card balance + rounding), daily cap math (incl. late-night toggle), reconciliation gap, credit card flow, transfer exclusion, safe-to-spend and buffer with scheduled items.
